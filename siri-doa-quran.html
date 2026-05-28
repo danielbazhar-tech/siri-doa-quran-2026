@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Siri Doa Al-Quran</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&display=swap" rel="stylesheet">
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  :root {
+    --bg-deep:      #080c14;
+    --bg-card:      #0d1422;
+    --bg-card-hover:#111929;
+    --bg-sidebar:   #0a0f1c;
+    --gold-bright:  #e8c96a;
+    --gold-dim:     #a8893a;
+    --gold-glow:    rgba(232,201,106,0.15);
+    --gold-border:  rgba(232,201,106,0.22);
+    --text-primary: #f0ead6;
+    --text-secondary:#9ba8b8;
+    --text-arabic:  #f5efdc;
+    --accent-teal:  #4ecdc4;
+    --white-dim:    rgba(240,234,214,0.08);
+    --font-body:    'Be Vietnam Pro', sans-serif;
+    --font-arabic:  'Amiri', serif;
+    --nav-height:   64px;
+  }
+
+  body {
+    font-family: var(--font-body);
+    background-color: var(--bg-deep);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── PROGRESS BAR ── */
+  #progress-bar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 2px;
+    width: 0%;
+    background: linear-gradient(90deg, var(--gold-dim), var(--gold-bright), var(--accent-teal));
+    z-index: 1100;
+    transition: width 0.1s linear;
+    pointer-events: none;
+  }
+
+  /* ── BACKGROUND ── */
+  .bg-pattern {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.03;
+    background-image:
+      repeating-linear-gradient(45deg, var(--gold-bright) 0, var(--gold-bright) 1px, transparent 0, transparent 50%),
+      repeating-linear-gradient(-45deg, var(--gold-bright) 0, var(--gold-bright) 1px, transparent 0, transparent 50%);
+    background-size: 48px 48px;
+  }
+  .bg-radial {
+    position: fixed; top: -20vh; left: 50%; transform: translateX(-50%);
+    width: 80vw; height: 80vw; max-width: 900px;
+    background: radial-gradient(ellipse, rgba(232,201,106,0.06) 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
+  }
+
+  /* ── NAVBAR ── */
+  #navbar {
+    position: fixed; top: 2px; left: 0; right: 0;
+    z-index: 900; height: var(--nav-height);
+    display: flex; align-items: center;
+    padding: 0 20px; gap: 12px;
+    background: rgba(8,12,20,0.9);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border-bottom: 1px solid rgba(232,201,106,0.08);
+  }
+  .nav-logo {
+    font-size: 0.78rem; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--gold-bright);
+    white-space: nowrap; flex-shrink: 0;
+    margin-right: 4px;
+  }
+
+  /* Search */
+  .nav-search-wrap {
+    flex: 1; max-width: 320px; position: relative;
+  }
+  .nav-search-wrap svg {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    color: var(--text-secondary); pointer-events: none; flex-shrink: 0;
+  }
+  #search-input {
+    font-family: var(--font-body);
+    width: 100%; padding: 8px 12px 8px 36px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px; color: var(--text-primary);
+    font-size: 0.8rem; outline: none;
+    transition: border-color 0.25s, background 0.25s;
+  }
+  #search-input::placeholder { color: var(--text-secondary); }
+  #search-input:focus {
+    border-color: var(--gold-border);
+    background: rgba(232,201,106,0.06);
+  }
+
+  /* Filter pills */
+  .nav-filters {
+    display: flex; gap: 6px; align-items: center;
+    overflow-x: auto; flex-shrink: 0;
+    scrollbar-width: none; -ms-overflow-style: none;
+    max-width: 420px;
+  }
+  .nav-filters::-webkit-scrollbar { display: none; }
+  .filter-pill {
+    font-family: var(--font-body);
+    font-size: 0.68rem; font-weight: 600;
+    letter-spacing: 0.5px; white-space: nowrap;
+    padding: 5px 13px; border-radius: 20px; cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: none; color: var(--text-secondary);
+    transition: all 0.2s ease;
+  }
+  .filter-pill:hover { color: var(--text-primary); border-color: rgba(255,255,255,0.25); }
+  .filter-pill.active {
+    background: var(--gold-glow); color: var(--gold-bright);
+    border-color: var(--gold-border);
+  }
+
+  /* Menu button */
+  .btn-menu {
+    display: flex; align-items: center; gap: 7px;
+    font-family: var(--font-body);
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.5px;
+    color: var(--text-secondary); background: none;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px; padding: 6px 14px;
+    cursor: pointer; flex-shrink: 0;
+    transition: all 0.2s ease;
+  }
+  .btn-menu:hover { color: var(--text-primary); border-color: rgba(255,255,255,0.25); }
+  .btn-menu svg { transition: transform 0.3s; }
+  .btn-menu.open svg { transform: rotate(90deg); }
+
+  /* ── SIDEBAR ── */
+  #sidebar-overlay {
+    position: fixed; inset: 0; z-index: 950;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  #sidebar-overlay.visible { opacity: 1; pointer-events: all; }
+
+  #sidebar {
+    position: fixed; top: 0; right: -360px;
+    width: 320px; max-width: 85vw; height: 100vh;
+    z-index: 960;
+    background: var(--bg-sidebar);
+    border-left: 1px solid var(--gold-border);
+    display: flex; flex-direction: column;
+    transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+  }
+  #sidebar.open { right: 0; }
+
+  .sidebar-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--white-dim);
+    flex-shrink: 0;
+  }
+  .sidebar-head h3 {
+    font-size: 0.75rem; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase;
+    color: var(--gold-bright);
+  }
+  .btn-close-sidebar {
+    background: none; border: none; cursor: pointer;
+    color: var(--text-secondary); padding: 4px;
+    display: flex; align-items: center;
+    transition: color 0.2s;
+  }
+  .btn-close-sidebar:hover { color: var(--text-primary); }
+
+  .sidebar-list {
+    flex: 1; overflow-y: auto; padding: 12px 0;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(232,201,106,0.2) transparent;
+  }
+  .sidebar-list::-webkit-scrollbar { width: 4px; }
+  .sidebar-list::-webkit-scrollbar-track { background: transparent; }
+  .sidebar-list::-webkit-scrollbar-thumb { background: rgba(232,201,106,0.2); border-radius: 2px; }
+
+  .sidebar-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 24px; cursor: pointer; text-decoration: none;
+    transition: background 0.2s;
+    border-left: 2px solid transparent;
+  }
+  .sidebar-item:hover { background: rgba(255,255,255,0.04); }
+  .sidebar-item.active {
+    background: var(--gold-glow);
+    border-left-color: var(--gold-bright);
+  }
+  .sidebar-num {
+    font-family: var(--font-arabic);
+    font-size: 1.1rem; color: var(--gold-dim);
+    flex-shrink: 0; width: 28px; text-align: center;
+  }
+  .sidebar-item.active .sidebar-num { color: var(--gold-bright); }
+  .sidebar-info { flex: 1; min-width: 0; }
+  .sidebar-title {
+    font-size: 0.82rem; font-weight: 500;
+    color: var(--text-primary); line-height: 1.3;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .sidebar-item.active .sidebar-title { color: var(--gold-bright); }
+  .sidebar-badge {
+    font-size: 0.6rem; font-weight: 600;
+    letter-spacing: 1px; text-transform: uppercase;
+    color: var(--accent-teal); margin-top: 3px;
+  }
+
+  .sidebar-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--white-dim);
+    flex-shrink: 0;
+  }
+  .sidebar-count {
+    font-size: 0.72rem; color: var(--text-secondary);
+    text-align: center;
+  }
+  .sidebar-count span { color: var(--gold-bright); font-weight: 600; }
+
+  /* ── NO RESULTS ── */
+  #no-results {
+    display: none; text-align: center;
+    padding: 80px 24px; color: var(--text-secondary);
+  }
+  #no-results p:first-child {
+    font-size: 2rem; margin-bottom: 12px; opacity: 0.4;
+  }
+  #no-results p:last-child { font-size: 0.9rem; }
+
+  /* ── HERO ── */
+  #hero {
+    position: relative; z-index: 1;
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; padding: 100px 24px 60px;
+  }
+  .hero-ornament {
+    font-size: 2.8rem; opacity: 0.7; margin-bottom: 24px;
+    animation: floatGlow 4s ease-in-out infinite;
+  }
+  @keyframes floatGlow {
+    0%, 100% { transform: translateY(0); filter: drop-shadow(0 0 8px rgba(232,201,106,0.4)); }
+    50% { transform: translateY(-8px); filter: drop-shadow(0 0 18px rgba(232,201,106,0.7)); }
+  }
+  .hero-subtitle {
+    font-size: 0.75rem; font-weight: 600; letter-spacing: 4px;
+    text-transform: uppercase; color: var(--gold-dim);
+    margin-bottom: 16px;
+    opacity: 0; animation: fadeUp 0.8s ease 0.2s forwards;
+  }
+  .hero-title {
+    font-size: clamp(2.6rem, 7vw, 5rem); font-weight: 700;
+    line-height: 1.1; letter-spacing: -1px;
+    background: linear-gradient(135deg, #f5efdc 0%, var(--gold-bright) 50%, #c9a84c 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    margin-bottom: 10px;
+    opacity: 0; animation: fadeUp 0.8s ease 0.4s forwards;
+  }
+  .hero-arabic-title {
+    font-family: var(--font-arabic);
+    font-size: clamp(1.4rem, 4vw, 2.2rem);
+    color: var(--gold-dim); margin-bottom: 24px;
+    opacity: 0; animation: fadeUp 0.8s ease 0.55s forwards;
+    direction: rtl;
+  }
+  .hero-desc {
+    max-width: 480px; font-size: 0.95rem; font-weight: 300;
+    line-height: 1.8; color: var(--text-secondary); margin-bottom: 48px;
+    opacity: 0; animation: fadeUp 0.8s ease 0.7s forwards;
+  }
+  .hero-scroll-hint {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    opacity: 0; animation: fadeUp 0.8s ease 1s forwards;
+  }
+  .hero-scroll-hint span {
+    font-size: 0.7rem; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--text-secondary);
+  }
+  .scroll-line {
+    width: 1px; height: 48px;
+    background: linear-gradient(to bottom, var(--gold-bright), transparent);
+    animation: scrollPulse 2s ease-in-out infinite;
+  }
+  @keyframes scrollPulse {
+    0%, 100% { opacity: 0.3; } 50% { opacity: 1; }
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── MAIN ── */
+  main {
+    position: relative; z-index: 1;
+    max-width: 820px; margin: 0 auto;
+    padding: 0 24px 100px;
+  }
+
+  /* ── GEO DIVIDER ── */
+  .geo-divider {
+    display: flex; align-items: center; justify-content: center;
+    gap: 16px; margin: 12px 0 52px; opacity: 0.35;
+  }
+  .geo-divider svg { width: 180px; height: 24px; }
+
+  /* ── DOA CARD ── */
+  .doa-section {
+    margin-bottom: 24px;
+    opacity: 0; transform: translateY(40px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .doa-section.visible { opacity: 1; transform: translateY(0); }
+  .doa-section.hidden { display: none; }
+
+  .doa-card {
+    background: var(--bg-card);
+    border: 1px solid var(--gold-border);
+    border-radius: 20px; overflow: hidden;
+    transition: background 0.3s, box-shadow 0.3s, border-color 0.3s;
+  }
+  .doa-card:hover {
+    background: var(--bg-card-hover);
+    border-color: rgba(232,201,106,0.4);
+    box-shadow: 0 0 40px rgba(232,201,106,0.07), 0 20px 60px rgba(0,0,0,0.4);
+  }
+
+  .card-header {
+    display: flex; align-items: flex-start; gap: 20px;
+    padding: 28px 32px 24px;
+    border-bottom: 1px solid var(--white-dim);
+  }
+  .card-number {
+    flex-shrink: 0; width: 44px; height: 44px;
+    border-radius: 12px; border: 1px solid var(--gold-border);
+    background: var(--gold-glow);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 1px;
+  }
+  .card-num-arabic {
+    font-family: var(--font-arabic);
+    font-size: 1rem; color: var(--gold-bright); line-height: 1;
+  }
+  .card-num-latin {
+    font-size: 0.55rem; font-weight: 600;
+    color: var(--gold-dim); letter-spacing: 0.5px;
+  }
+  .card-meta { flex: 1; }
+  .card-badge {
+    display: inline-block; font-size: 0.65rem; font-weight: 600;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--accent-teal); background: rgba(78,205,196,0.1);
+    border: 1px solid rgba(78,205,196,0.25);
+    border-radius: 20px; padding: 3px 10px; margin-bottom: 8px;
+  }
+  .card-title {
+    font-size: 1.15rem; font-weight: 600;
+    color: var(--text-primary); line-height: 1.35;
+  }
+  .card-ref {
+    margin-top: 6px; font-size: 0.75rem;
+    font-weight: 500; color: var(--gold-dim);
+  }
+
+  .arabic-wrap {
+    padding: 28px 32px;
+    border-bottom: 1px solid var(--white-dim);
+    background: rgba(0,0,0,0.2);
+  }
+  .section-label {
+    font-size: 0.63rem; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase;
+    color: var(--gold-dim); margin-bottom: 16px;
+  }
+  .arabic-text {
+    font-family: var(--font-arabic);
+    font-size: clamp(1.5rem, 3.5vw, 2rem);
+    line-height: 2.6; text-align: right; direction: rtl;
+    color: var(--text-arabic); letter-spacing: 0.5px;
+  }
+
+  .translit-wrap {
+    padding: 0 32px; max-height: 0; overflow: hidden;
+    transition: max-height 0.4s ease, padding 0.3s ease;
+    border-bottom: 1px solid transparent;
+  }
+  .translit-wrap.open {
+    max-height: 200px; padding: 16px 32px;
+    border-bottom-color: var(--white-dim);
+  }
+  .translit-text {
+    font-size: 0.88rem; font-style: italic; font-weight: 300;
+    color: var(--text-secondary); line-height: 1.9; letter-spacing: 0.3px;
+  }
+
+  .translation-wrap {
+    padding: 24px 32px;
+    border-bottom: 1px solid var(--white-dim);
+  }
+  .translation-text {
+    font-size: 0.97rem; font-weight: 300; line-height: 1.85;
+    color: var(--text-primary); font-style: italic;
+    border-left: 2px solid var(--gold-border); padding-left: 16px;
+  }
+
+  .card-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 32px; gap: 12px; flex-wrap: wrap;
+  }
+  .btn-translit {
+    font-family: var(--font-body); font-size: 0.72rem;
+    font-weight: 600; letter-spacing: 0.5px; color: var(--text-secondary);
+    background: none; border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px; padding: 6px 14px; cursor: pointer;
+    transition: all 0.25s; display: flex; align-items: center; gap: 6px;
+  }
+  .btn-translit:hover { color: var(--text-primary); border-color: rgba(255,255,255,0.25); }
+  .btn-translit.active {
+    color: var(--accent-teal); border-color: rgba(78,205,196,0.35);
+    background: rgba(78,205,196,0.07);
+  }
+  .copy-group { display: flex; gap: 8px; }
+  .btn-copy {
+    font-family: var(--font-body); font-size: 0.7rem; font-weight: 600;
+    letter-spacing: 0.5px; border: none; border-radius: 20px;
+    padding: 6px 14px; cursor: pointer; transition: all 0.25s;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .btn-copy-arabic {
+    background: var(--gold-glow); color: var(--gold-bright);
+    border: 1px solid var(--gold-border);
+  }
+  .btn-copy-arabic:hover { background: rgba(232,201,106,0.22); }
+  .btn-copy-translation {
+    background: var(--white-dim); color: var(--text-secondary);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .btn-copy-translation:hover { background: rgba(255,255,255,0.12); color: var(--text-primary); }
+  .btn-copy.copied {
+    background: rgba(78,205,196,0.15); color: var(--accent-teal);
+    border-color: rgba(78,205,196,0.3);
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    position: relative; z-index: 1;
+    text-align: center; padding: 40px 24px 60px;
+    border-top: 1px solid var(--white-dim);
+  }
+  .footer-arabic {
+    font-family: var(--font-arabic); font-size: 1.6rem;
+    color: var(--gold-dim); margin-bottom: 10px; direction: rtl;
+  }
+  .footer-text { font-size: 0.78rem; color: var(--text-secondary); letter-spacing: 1px; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 640px) {
+    .nav-filters { display: none; }
+    .nav-logo { display: none; }
+    .card-header { padding: 20px 18px 16px; }
+    .arabic-wrap, .translation-wrap { padding-left: 18px; padding-right: 18px; }
+    .translit-wrap.open { padding-left: 18px; padding-right: 18px; }
+    .card-footer { padding: 14px 18px; }
+    .copy-group { gap: 6px; }
+    .btn-copy { font-size: 0.65rem; padding: 5px 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+<div class="bg-pattern"></div>
+<div class="bg-radial"></div>
+
+<!-- ── NAVBAR ── -->
+<nav id="navbar">
+  <span class="nav-logo">Siri Doa</span>
+
+  <div class="nav-search-wrap">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" id="search-input" placeholder="Cari doa, surah, nabi...">
+  </div>
+
+  <div class="nav-filters" id="filter-bar">
+    <button class="filter-pill active" data-filter="semua">Semua</button>
+    <button class="filter-pill" data-filter="Doa Harian">Harian</button>
+    <button class="filter-pill" data-filter="Doa Nabi-Nabi">Nabi-Nabi</button>
+    <button class="filter-pill" data-filter="Doa Hati">Hati</button>
+    <button class="filter-pill" data-filter="Doa Kesusahan">Kesusahan</button>
+    <button class="filter-pill" data-filter="Doa Keampunan">Keampunan</button>
+    <button class="filter-pill" data-filter="Doa Syukur">Syukur</button>
+    <button class="filter-pill" data-filter="Doa Keluarga">Keluarga</button>
+    <button class="filter-pill" data-filter="Doa Ujian">Ujian</button>
+    <button class="filter-pill" data-filter="Doa Perlindungan">Perlindungan</button>
+  </div>
+
+  <button class="btn-menu" id="btn-menu" onclick="toggleSidebar()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><circle cx="3" cy="18" r="1" fill="currentColor"/></svg>
+    Semua Doa
+  </button>
+</nav>
+
+<!-- ── SIDEBAR ── -->
+<div id="sidebar-overlay" onclick="closeSidebar()"></div>
+<aside id="sidebar">
+  <div class="sidebar-head">
+    <h3>Senarai Doa</h3>
+    <button class="btn-close-sidebar" onclick="closeSidebar()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div class="sidebar-list" id="sidebar-list">
+    <!-- populated by JS -->
+  </div>
+  <div class="sidebar-footer">
+    <p class="sidebar-count">Jumlah: <span id="sidebar-total">5</span> doa</p>
+  </div>
+</aside>
+
+<!-- ── HERO ── -->
+<section id="hero">
+  <div class="hero-ornament">☽</div>
+  <p class="hero-subtitle">Koleksi Spiritual</p>
+  <h1 class="hero-title">Siri Doa<br>Al-Quran</h1>
+  <p class="hero-arabic-title">سِلْسِلَةُ أَدْعِيَةِ الْقُرْآنِ</p>
+  <p class="hero-desc">Sepuluh doa pilihan dari Al-Quran Al-Karim. Doa para nabi dan orang-orang soleh yang Allah abadikan sebagai petunjuk dan penguat jiwa kita.</p>
+  <div class="hero-scroll-hint">
+    <span>Skrol ke bawah</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- ── MAIN ── -->
+<main id="main-content">
+  <div id="no-results">
+    <p>🔍</p>
+    <p>Tiada doa dijumpai. Cuba kata kunci lain.</p>
+  </div>
+</main>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <p class="footer-arabic">وَإِذَا سَأَلَكَ عِبَادِي عَنِّي فَإِنِّي قَرِيبٌ</p>
+  <p class="footer-text">Siri Doa Al-Quran &nbsp;·&nbsp; Semoga memberi manfaat di dunia dan akhirat</p>
+</footer>
+
+<script>
+/* ─────────────────────────────────────────
+   DATA — tambah doa baru di sini sahaja
+───────────────────────────────────────── */
+const DUAS = [
+  {
+    id: 'doa1',
+    kategori: 'Doa Harian',
+    tajuk: 'Doa Mohon Kebaikan Dunia & Akhirat',
+    rujukan: 'Surah Al-Baqarah · Ayat 201',
+    arab: 'رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ',
+    rumi: 'Rabbanā ātinā fid-dunyā ḥasanah, wa fil-ākhirati ḥasanah, wa qinā \'adhāban-nār.',
+    terjemahan: 'Wahai Tuhan kami, berilah kami kebaikan di dunia dan kebaikan di akhirat, dan jagalah kami daripada azab neraka.',
+  },
+  {
+    id: 'doa2',
+    kategori: 'Doa Nabi-Nabi',
+    tajuk: 'Doa Mohon Kelapangan Hati & Kemudahan Urusan',
+    rujukan: 'Surah Taha · Ayat 25–28',
+    arab: 'رَبِّ اشْرَحْ لِي صَدْرِي وَيَسِّرْ لِي أَمْرِي وَاحْلُلْ عُقْدَةً مِّن لِّسَانِي يَفْقَهُوا قَوْلِي',
+    rumi: 'Rabbi-shrāḥ lī ṣadrī, wa yassir lī amrī, waḥlul \'uqdatan min lisānī, yafqahū qawlī.',
+    terjemahan: 'Wahai Tuhanku, lapangkanlah dadaku, permudahkanlah urusanku, dan longgarkanlah ikatan pada lidahku supaya mereka dapat memahami percakapanku.',
+    nota: 'Doa Nabi Musa a.s.'
+  },
+  {
+    id: 'doa3',
+    kategori: 'Doa Hati',
+    tajuk: 'Doa Mohon Hati Tetap di Atas Petunjuk',
+    rujukan: 'Surah Ali-Imran · Ayat 8',
+    arab: 'رَبَّنَا لَا تُزِغْ قُلُوبَنَا بَعْدَ إِذْ هَدَيْتَنَا وَهَبْ لَنَا مِن لَّدُنكَ رَحْمَةً ۚ إِنَّكَ أَنتَ الْوَهَّابُ',
+    rumi: 'Rabbanā lā tuzigh qulūbanā ba\'da idh hadaytanā wa hab lanā min ladunka raḥmah, innaka antal-Wahhāb.',
+    terjemahan: 'Wahai Tuhan kami, janganlah Engkau pesongkan hati kami setelah Engkau beri petunjuk kepada kami, dan kurniakanlah kepada kami rahmat daripada sisi-Mu. Sesungguhnya Engkaulah Yang Maha Pemberi.',
+  },
+  {
+    id: 'doa4',
+    kategori: 'Doa Kesusahan',
+    tajuk: 'Doa Ketika Kesusahan & Kegawatan',
+    rujukan: 'Surah Al-Anbiya\' · Ayat 87',
+    arab: 'لَّا إِلَٰهَ إِلَّا أَنتَ سُبْحَانَكَ إِنِّي كُنتُ مِنَ الظَّالِمِينَ',
+    rumi: 'Lā ilāha illā anta subḥānaka innī kuntu minaẓ-ẓālimīn.',
+    terjemahan: 'Tiada Tuhan melainkan Engkau. Maha Suci Engkau. Sesungguhnya aku termasuk dalam golongan orang-orang yang zalim.',
+    nota: 'Doa Nabi Yunus a.s.'
+  },
+  {
+    id: 'doa5',
+    kategori: 'Doa Keampunan',
+    tajuk: 'Doa Mohon Keampunan & Rahmat',
+    rujukan: 'Surah Al-A\'raf · Ayat 23',
+    arab: 'رَبَّنَا ظَلَمْنَا أَنفُسَنَا وَإِن لَّمْ تَغْفِرْ لَنَا وَتَرْحَمْنَا لَنَكُونَنَّ مِنَ الْخَاسِرِينَ',
+    rumi: 'Rabbanā ẓalamnā anfusanā wa il lam taghfir lanā wa tarḥamnā lanakūnanna minal-khāsirīn.',
+    terjemahan: 'Wahai Tuhan kami, kami telah menganiaya diri kami sendiri. Sekiranya Engkau tidak mengampunkan kami dan tidak merahmati kami, nescaya kami termasuk dalam golongan orang-orang yang rugi.',
+    nota: 'Doa Nabi Adam a.s. & Hawa'
+  },
+  {
+    id: 'doa6',
+    kategori: 'Doa Nabi-Nabi',
+    tajuk: 'Doa Mohon Dijadikan Orang yang Mendirikan Solat',
+    rujukan: 'Surah Ibrahim · Ayat 40',
+    arab: 'رَبِّ اجْعَلْنِي مُقِيمَ الصَّلَاةِ وَمِن ذُرِّيَّتِي ۚ رَبَّنَا وَتَقَبَّلْ دُعَاءِ',
+    rumi: 'Rabbij\'alnī muqīmaṣ-ṣalāti wa min dhurriyyatī, rabbanā wa taqabbal du\'ā\'.',
+    terjemahan: 'Wahai Tuhanku, jadikanlah aku orang yang mendirikan solat, dan begitu juga keturunanku. Wahai Tuhan kami, perkenankanlah doaku.',
+    nota: 'Doa Nabi Ibrahim a.s.'
+  },
+  {
+    id: 'doa7',
+    kategori: 'Doa Perlindungan',
+    tajuk: 'Doa Mohon Perlindungan daripada Hasutan Syaitan',
+    rujukan: 'Surah Al-Mu\'minun · Ayat 97–98',
+    arab: 'رَّبِّ أَعُوذُ بِكَ مِنْ هَمَزَاتِ الشَّيَاطِينِ وَأَعُوذُ بِكَ رَبِّ أَن يَحْضُرُونِ',
+    rumi: 'Rabbi a\'ūdhu bika min hamazātish-shayāṭīn, wa a\'ūdhu bika rabbi an yaḥḍurūn.',
+    terjemahan: 'Wahai Tuhanku, aku berlindung kepada-Mu daripada hasutan syaitan, dan aku berlindung kepada-Mu wahai Tuhanku, daripada kedatangan mereka kepadaku.',
+  },
+  {
+    id: 'doa8',
+    kategori: 'Doa Syukur',
+    tajuk: 'Doa Mohon Taufik untuk Bersyukur',
+    rujukan: 'Surah An-Naml · Ayat 19',
+    arab: 'رَبِّ أَوْزِعْنِي أَنْ أَشْكُرَ نِعْمَتَكَ الَّتِي أَنْعَمْتَ عَلَيَّ وَعَلَىٰ وَالِدَيَّ وَأَنْ أَعْمَلَ صَالِحًا تَرْضَاهُ وَأَدْخِلْنِي بِرَحْمَتِكَ فِي عِبَادِكَ الصَّالِحِينَ',
+    rumi: 'Rabbi awzi\'nī an ashkura ni\'matakallati an\'amta \'alayya wa \'alā wālidayya wa an a\'mala ṣāliḥan tarḍāhu wa adkhilnī biraḥmatika fī \'ibādikaṣ-ṣāliḥīn.',
+    terjemahan: 'Wahai Tuhanku, ilhamkanlah aku supaya aku sentiasa bersyukur atas nikmat-Mu yang Engkau kurniakan kepadaku dan kepada kedua ibu bapaku, dan supaya aku mengerjakan amal soleh yang Engkau redai, dan masukkanlah aku dengan rahmat-Mu ke dalam golongan hamba-hamba-Mu yang soleh.',
+    nota: 'Doa Nabi Sulaiman a.s.'
+  },
+  {
+    id: 'doa9',
+    kategori: 'Doa Keluarga',
+    tajuk: 'Doa Mohon Zuriat & Pasangan yang Menjadi Penyejuk Mata',
+    rujukan: 'Surah Al-Furqan · Ayat 74',
+    arab: 'رَبَّنَا هَبْ لَنَا مِنْ أَزْوَاجِنَا وَذُرِّيَّاتِنَا قُرَّةَ أَعْيُنٍ وَاجْعَلْنَا لِلْمُتَّقِينَ إِمَامًا',
+    rumi: 'Rabbanā hab lanā min azwājinā wa dhurriyyātinā qurrata a\'yun, waj\'alnā lil-muttaqīna imāmā.',
+    terjemahan: 'Wahai Tuhan kami, kurniakanlah kepada kami isteri-isteri dan zuriat keturunan kami sebagai penyejuk hati, dan jadikanlah kami pemimpin bagi orang-orang yang bertakwa.',
+  },
+  {
+    id: 'doa10',
+    kategori: 'Doa Ujian',
+    tajuk: 'Doa Ketika Ditimpa Penyakit & Kesusahan',
+    rujukan: 'Surah Al-Anbiya\' · Ayat 83',
+    arab: 'رَبَّهُ أَنِّي مَسَّنِيَ الضُّرُّ وَأَنتَ أَرْحَمُ الرَّاحِمِينَ',
+    rumi: 'Rabbi annī massaniyaḍ-ḍurru wa anta arḥamur-rāḥimīn.',
+    terjemahan: 'Wahai Tuhanku, sesungguhnya aku ditimpa kesusahan, dan Engkaulah Yang Maha Penyayang di antara semua yang penyayang.',
+    nota: 'Doa Nabi Ayyub a.s.'
+  }
+];
+
+/* ─────────────────────────────────────────
+   AUTO-NUMBERING
+───────────────────────────────────────── */
+function toArabicNum(n) {
+  return String(n).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
+}
+function toLatin(n) {
+  return String(n).padStart(2, '0');
+}
+
+/* ─────────────────────────────────────────
+   RENDER
+───────────────────────────────────────── */
+const GEO_SVG = `<div class="geo-divider" aria-hidden="true">
+  <svg viewBox="0 0 180 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="0" y1="12" x2="60" y2="12" stroke="#a8893a" stroke-width="0.75"/>
+    <polygon points="68,12 74,6 80,12 74,18" stroke="#a8893a" stroke-width="0.75" fill="none"/>
+    <polygon points="80,12 86,6 92,12 86,18" stroke="#a8893a" stroke-width="0.75" fill="none"/>
+    <polygon points="88,12 94,6 100,12 94,18" stroke="#a8893a" stroke-width="0.75" fill="none"/>
+    <line x1="108" y1="12" x2="180" y2="12" stroke="#a8893a" stroke-width="0.75"/>
+  </svg>
+</div>`;
+
+function renderDuas() {
+  const main = document.getElementById('main-content');
+  // Clear existing cards (keep no-results div)
+  const noResults = document.getElementById('no-results');
+  main.innerHTML = '';
+  main.appendChild(noResults);
+
+  DUAS.forEach((d, i) => {
+    const section = document.createElement('div');
+    section.className = 'doa-section';
+    section.id = d.id;
+    section.dataset.kategori = d.kategori;
+    section.dataset.search = [d.tajuk, d.rujukan, d.arab, d.terjemahan, d.kategori, d.nota || ''].join(' ').toLowerCase();
+
+    section.innerHTML = `
+      <div class="doa-card">
+        <div class="card-header">
+          <div class="card-number">
+            <span class="card-num-arabic">${toArabicNum(i + 1)}</span>
+            <span class="card-num-latin">${toLatin(i + 1)}</span>
+          </div>
+          <div class="card-meta">
+            <span class="card-badge">${d.kategori}${d.nota ? ' · ' + d.nota : ''}</span>
+            <h2 class="card-title">${d.tajuk}</h2>
+            <p class="card-ref">${d.rujukan}</p>
+          </div>
+        </div>
+        <div class="arabic-wrap">
+          <p class="section-label">Lafaz Arab</p>
+          <p class="arabic-text">${d.arab}</p>
+        </div>
+        <div class="translit-wrap" id="translit-${d.id}">
+          <p class="translit-text">${d.rumi}</p>
+        </div>
+        <div class="translation-wrap">
+          <p class="section-label">Terjemahan</p>
+          <p class="translation-text">"${d.terjemahan}"</p>
+        </div>
+        <div class="card-footer">
+          <button class="btn-translit" onclick="toggleTranslit('translit-${d.id}', this)">
+            <span>Rumi</span>
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 4l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </button>
+          <div class="copy-group">
+            <button class="btn-copy btn-copy-arabic" onclick="copyText(this, \`${d.arab}\`)">&#x2764;&#xFE0F; Salin Arab</button>
+            <button class="btn-copy btn-copy-translation" onclick="copyText(this, \`${d.terjemahan}\`)">Salin Terjemahan</button>
+          </div>
+        </div>
+      </div>
+      ${i < DUAS.length - 1 ? GEO_SVG : ''}
+    `;
+    main.appendChild(section);
+  });
+
+  // Observe for fade-in
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.doa-section').forEach(el => observer.observe(el));
+
+  renderSidebar();
+}
+
+/* ─────────────────────────────────────────
+   SIDEBAR
+───────────────────────────────────────── */
+function renderSidebar() {
+  const list = document.getElementById('sidebar-list');
+  list.innerHTML = '';
+  DUAS.forEach((d, i) => {
+    const a = document.createElement('a');
+    a.className = 'sidebar-item';
+    a.href = '#' + d.id;
+    a.innerHTML = `
+      <span class="sidebar-num">${toArabicNum(i + 1)}</span>
+      <div class="sidebar-info">
+        <p class="sidebar-title">${d.tajuk}</p>
+        <p class="sidebar-badge">${d.kategori}${d.nota ? ' · ' + d.nota : ''}</p>
+      </div>
+    `;
+    a.addEventListener('click', () => { closeSidebar(); });
+    list.appendChild(a);
+  });
+  document.getElementById('sidebar-total').textContent = DUAS.length;
+}
+
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  const btn = document.getElementById('btn-menu');
+  const isOpen = sidebar.classList.toggle('open');
+  overlay.classList.toggle('visible', isOpen);
+  btn.classList.toggle('open', isOpen);
+  document.body.style.overflow = isOpen ? 'hidden' : '';
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('visible');
+  document.getElementById('btn-menu').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+/* ─────────────────────────────────────────
+   SEARCH
+───────────────────────────────────────── */
+let activeFilter = 'semua';
+let searchQuery = '';
+
+document.getElementById('search-input').addEventListener('input', function() {
+  searchQuery = this.value.trim().toLowerCase();
+  applyFilters();
+});
+
+document.getElementById('filter-bar').addEventListener('click', function(e) {
+  const pill = e.target.closest('.filter-pill');
+  if (!pill) return;
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  pill.classList.add('active');
+  activeFilter = pill.dataset.filter;
+  applyFilters();
+});
+
+function applyFilters() {
+  const sections = document.querySelectorAll('.doa-section');
+  let visible = 0;
+  sections.forEach(section => {
+    const matchFilter = activeFilter === 'semua' || section.dataset.kategori === activeFilter;
+    const matchSearch = !searchQuery || section.dataset.search.includes(searchQuery);
+    const show = matchFilter && matchSearch;
+    section.classList.toggle('hidden', !show);
+    if (show) visible++;
+  });
+  document.getElementById('no-results').style.display = visible === 0 ? 'block' : 'none';
+}
+
+/* ─────────────────────────────────────────
+   PROGRESS BAR & ACTIVE SIDEBAR
+───────────────────────────────────────── */
+window.addEventListener('scroll', () => {
+  const doc = document.documentElement;
+  const pct = doc.scrollTop / (doc.scrollHeight - doc.clientHeight) * 100;
+  document.getElementById('progress-bar').style.width = pct + '%';
+
+  // Highlight sidebar active item
+  const scrollY = window.scrollY + 140;
+  let current = '';
+  DUAS.forEach(d => {
+    const el = document.getElementById(d.id);
+    if (el && el.offsetTop <= scrollY) current = d.id;
+  });
+  document.querySelectorAll('.sidebar-item').forEach(a => {
+    a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+  });
+});
+
+/* ─────────────────────────────────────────
+   TRANSLITERATION
+───────────────────────────────────────── */
+function toggleTranslit(id, btn) {
+  const wrap = document.getElementById(id);
+  const isOpen = wrap.classList.toggle('open');
+  btn.classList.toggle('active', isOpen);
+  btn.querySelector('svg path').setAttribute('d', isOpen ? 'M2 6l3-3 3 3' : 'M2 4l3 3 3-3');
+}
+
+/* ─────────────────────────────────────────
+   COPY
+───────────────────────────────────────── */
+function copyText(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.innerHTML;
+    btn.classList.add('copied');
+    btn.innerHTML = '✓ Disalin!';
+    setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = orig; }, 2000);
+  });
+}
+
+/* ─────────────────────────────────────────
+   INIT
+───────────────────────────────────────── */
+renderDuas();
+</script>
+</body>
+</html>
